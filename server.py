@@ -102,7 +102,13 @@ def fetch_vavoo_channels():
         if not is_tr and not is_de:
             continue
 
-        name_clean = re.sub(r"[^\x00-\x7F]+", "", name)
+        # VPS reisomer format: "4K TR: TRT 1 HD .b" → "4K TR: TRT 1 HD"
+        # Quality suffixleri .b (best), .c (channel), .s (sport) temizle
+        name_clean = re.sub(r"\s*\.[bcsBCS]\s*$", "", name)
+        # 4K TR: prefix'ini koru (VPS formatı), sadece non-ASCII temizle
+        name_clean = re.sub(r"[^\x00-\x7F]+", "", name_clean)
+        # Çift boşlukları tek yap
+        name_clean = re.sub(r"\s+", " ", name_clean).strip()
         if not name_clean:
             continue
 
@@ -243,7 +249,17 @@ def remap_groups():
 
     updated = 0
     sonstige_count = 0
-    for lid, name in channels_list:
+    diger_count = 0
+    # Channel'ların kaynak grubunu da çek (TR/DE ayırımı için)
+    c.execute("SELECT lid, name, grp FROM channels")
+    channels_list = c.fetchall()
+
+    for lid, name, src_grp in channels_list:
+        src_grp_lower = (src_grp or "").lower()
+        is_tr_src = any(x in src_grp_lower for x in ["turkey", "turkish", "tr"])
+        # Fallback grup belirle
+        fallback_grp = "Diğer" if is_tr_src else "DE SONSTIGE"
+
         assigned = False
         for gi, gn in enumerate(state.GROUP_ORDER):
             for kw in state.GROUP_RULES.get(gn, []):
@@ -258,16 +274,19 @@ def remap_groups():
             if assigned:
                 break
         if not assigned:
-            c.execute("SELECT cid FROM categories WHERE name='DE SONSTIGE'")
+            c.execute("SELECT cid FROM categories WHERE name=?", (fallback_grp,))
             row = c.fetchone()
             if row:
-                group_counters["DE SONSTIGE"] = group_counters.get("DE SONSTIGE", 0) + 1
-                ch_sort = 980000 + group_counters["DE SONSTIGE"]
-                c.execute("UPDATE channels SET cid=?,grp='DE SONSTIGE',sort_order=? WHERE lid=?", (row[0], ch_sort, lid))
-                sonstige_count += 1
+                group_counters[fallback_grp] = group_counters.get(fallback_grp, 0) + 1
+                ch_sort = 980000 + group_counters[fallback_grp]
+                c.execute("UPDATE channels SET cid=?,grp=?,sort_order=? WHERE lid=?", (row[0], fallback_grp, ch_sort, lid))
+                if fallback_grp == "DE SONSTIGE":
+                    sonstige_count += 1
+                else:
+                    diger_count += 1
     conn.commit()
     conn.close()
-    state.slog(f"Grup remap: {updated} kanal (Sonstige: {sonstige_count})")
+    state.slog(f"Grup remap: {updated} kanal (Sonstige: {sonstige_count}, Diğer: {diger_count})")
 
 
 # ============================================================
