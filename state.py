@@ -445,24 +445,84 @@ def normalize_logo_url(logo: str) -> str:
 
 
 # ============================================================
-# GRUP SIRALAMASI - VPS reisomer yapısı birebir (44 grup)
-# VPS'deki custom_groups tablosundan çekildi (sort_order ile)
+# GRUP SIRALAMASI - VPS reisomer custom_groups tablosu BIREBIR
+# Sira: 152.70.44.242 /home/ubuntu/reisomer/data/state.db
+#       SELECT sort_order, name FROM custom_groups ORDER BY sort_order
+# 29 grup (DE RELIGION = sort_order 9999, alphabetik son)
 # ============================================================
 GROUP_ORDER = [
-    # TR grupları (sort_order 0-23)
-    "Ulusal", "BeinSport", "Sinema", "Haber", "Belgesel",
-    "Spor", "Çocuk", "Avrupa", "Dini", "Diğer",
-    "Magenta", "Müzik", "TR YEREL",
-    # DE grupları (sort_order 8-27)
-    "DE FILM", "DE DOKU", "DE SPORT", "DE AUTO MOTOR", "DE KINDER",
-    "DE LIFESTYLE", "DE NACHRICHTEN", "DE REGIONAL", "DE SONSTIGE",
-    "DE VOLLPROGRAMM", "DE SERIEN", "DE EINKAUF", "DE MUSIK", "DE PARLAMENT",
-    # VPS'de ek gruplar (boş ama yapı korunsun)
-    "TR ULUSAL", "BEIN VOD", "TR SPOR", "TR SINEMA", "TR SINEMA VOD",
-    "TR DIZI", "TR 7/24 DIZI", "TR BELGESEL", "TR COCUK", "TR MUZIK",
-    "TR HABER", "TR DINI", "TR RADYO", "TR 4K", "TR 8K", "TR RAW",
-    "Ulusal 4K",
+    # TR gruplari (sort_order 0-7, 19-23)
+    "Ulusal",       # 0
+    "BeinSport",    # 1
+    "BEIN VOD",     # 2
+    "Sinema",       # 3
+    "Haber",        # 4
+    "Spor",         # 5
+    "Belgesel",     # 6
+    "Çocuk",        # 7
+    # DE gruplari (sort_order 8, 10-18, 24-27)
+    "DE FILM",          # 8
+    "Avrupa",           # 9
+    "DE DOKU",          # 10
+    "DE SPORT",         # 11
+    "DE AUTO MOTOR",    # 12
+    "DE KINDER",        # 13
+    "DE LIFESTYLE",     # 14
+    "DE NACHRICHTEN",   # 15
+    "DE REGIONAL",      # 16
+    "DE SONSTIGE",      # 17  (fallback DE)
+    "DE VOLLPROGRAMM",  # 18
+    # TR ek gruplar (sort_order 19-23)
+    "Dini",         # 19
+    "Diğer",        # 20  (fallback TR)
+    "Magenta",      # 21
+    "Müzik",        # 22
+    "TR YEREL",     # 23
+    # DE ek gruplar (sort_order 24-27 + 9999)
+    "DE SERIEN",    # 24
+    "DE EINKAUF",   # 25
+    "DE MUSIK",     # 26
+    "DE PARLAMENT", # 27
+    "DE RELIGION",  # 9999 (VPS'de yok ama channels tablosunda var)
 ]
+
+# ============================================================
+# UPSTREAM GROUP MAP - Vavoo ham grup -> VPS grup eslemesi
+# Vavoo source'dan gelen group-title degerlerini VPS yapısına cevir
+# Bu, keyword matching'den COK daha deterministic calisir
+# ============================================================
+UPSTREAM_GROUP_MAP = {
+    # TR Vavoo gruplari -> VPS gruplari
+    "TR ULUSAL":      "Ulusal",
+    "TR SPOR":        "Spor",
+    "TR SINEMA":      "Sinema",
+    "TR SINEMA UHD":  "Sinema",
+    "TR BEIN SPORTS": "BeinSport",
+    "TR HABER":       "Haber",
+    "TR BELGESEL":    "Belgesel",
+    "TR COCUK":       "Çocuk",
+    "TR MUZIK":       "Müzik",
+    "TR DINI":        "Dini",
+    "TR RADYO":       "Diğer",      # radyolar Diğer grubuna
+    "TR YEREL":       "TR YEREL",
+    # DE Vavoo gruplari -> VPS gruplari
+    "DE DEUTSCHLAND":   "DE VOLLPROGRAMM",  # genel Alman TV
+    "DE VIP SPORTS":    "DE SPORT",
+    "DE NEWS":          "DE NACHRICHTEN",
+    "DE KIDS":          "DE KINDER",
+    "DE KINO":          "DE FILM",
+    "DE THEMEN":        "DE DOKU",          # tematik = doku
+    "DE INFOTAINMENT":  "DE DOKU",
+    "DE AUSTRIA":       "DE REGIONAL",
+    "DE SCHWEIZ":       "DE REGIONAL",
+    # Ayni isimli gruplar (zaten VPS ile ayni)
+    "DE FILM":          "DE FILM",
+    "DE DOKU":          "DE DOKU",
+    "DE SPORT":         "DE SPORT",
+    "DE SERIEN":        "DE SERIEN",
+    "DE MUSIK":         "DE MUSIK",
+    "DE SONSTIGE":      "DE SONSTIGE",
+}
 
 # VPS reisomer yapısı ile uyumlu grup kuralları
 # Kanal isimlerindeki keyword'lere göre grup atama
