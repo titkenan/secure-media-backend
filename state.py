@@ -65,7 +65,12 @@ STARTUP_LOGS = []
 
 DB_PATH = os.environ.get("DB_PATH", "/tmp/vxparser.db")
 M3U_PATH = os.environ.get("M3U_PATH", "/tmp/playlist.m3u")
-PORT = int(os.environ.get("PORT", 10000))
+# Defensive: PORT env might be set to wrong value (e.g. path string). Fall back to 10000.
+try:
+    _port_raw = os.environ.get("PORT", "10000")
+    PORT = int(_port_raw) if str(_port_raw).isdigit() else 10000
+except (ValueError, TypeError):
+    PORT = 10000
 
 _vavoo_sig = None
 _vavoo_sig_time = 0
